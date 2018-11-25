@@ -34,7 +34,7 @@ public class RoutingConfig {
 
         factory.addServerCustomizers(builder -> builder
                 .afterChannelInit(
-                        channel -> channel.pipeline().addBefore("reactor.left.httpServerHandler", "decompressor", new HttpContentDecompressor()))
+                        channel -> channel.pipeline().addAfter("reactor.left.httpCodec", "decompressor", new HttpContentDecompressor()))
                 .loopResources(LoopResources.create("netty-loop", 4, true)));
 
         return factory;
