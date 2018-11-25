@@ -6,6 +6,8 @@ import static org.springframework.web.reactive.function.server.RouterFunctions.n
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 import static org.springframework.web.reactive.function.server.ServerResponse.ok;
 
+import java.util.function.Consumer;
+
 import org.springframework.boot.web.embedded.netty.NettyReactiveWebServerFactory;
 import org.springframework.boot.web.reactive.server.ReactiveWebServerFactory;
 import org.springframework.context.annotation.Bean;
@@ -18,7 +20,7 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import reactor.core.publisher.Mono;
-import reactor.ipc.netty.resources.LoopResources;
+import reactor.netty.Connection;
 
 @Configuration
 public class RoutingConfig {
@@ -33,9 +35,9 @@ public class RoutingConfig {
         NettyReactiveWebServerFactory factory = new NettyReactiveWebServerFactory();
 
         factory.addServerCustomizers(builder -> builder
-                .afterChannelInit(
-                        channel -> channel.pipeline().addBefore("reactor.left.httpServerHandler", "decompressor", new HttpContentDecompressor()))
-                .loopResources(LoopResources.create("netty-loop", 4, true)));
+                .tcpConfiguration(tcpServer -> tcpServer.doOnConnection((Consumer<Connection>) connection -> {
+                    connection.channel().pipeline().addAfter("reactor.left.httpCodec", "decompressor", new HttpContentDecompressor());
+                })));
 
         return factory;
     }
